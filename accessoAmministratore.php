@@ -1,27 +1,39 @@
 <?php
-  //includo il file di connessione al database e faccio partire la sessione
-  session_start();
-	include'connect.php';
-  $errore="false";
-  //se i campi nickname e password sono inseriti
-	if(isset($_POST['email'])&&isset($_POST['password'])){
-    //registro le variabili nickname e password
-		$email = $_POST['email'];
-		$password = $_POST['password'];
-    $qNickPass = "SELECT * FROM amministratore WHERE Email = '$email' AND Password = '$password' ";
-  	$qNickPassE = mysqli_query($conn,$qNickPass);
-  	$contaNickPass = mysqli_num_rows($qNickPassE);
-    $aNickPass = mysqli_fetch_array($qNickPassE);
-    //se esiste una riga contata
-  	if ($contaNickPass == 1) {
-      //apro la sessione Nickname, Login e, a seconda del tipo di utente, Autore o Utente
-  		$_SESSION['nome'] = $aNickPass[2];
-  		$_SESSION['loginAmministratore'] = "true";
-  		echo($errore);
-  	}else { //se non esistono corrispondenze stampo un messaggio di errore
-      $errore="Nickname o password errati";
-      echo($errore);
-  	}
-	}
-  mysqli_close($conn);
-?>
+// Includo il file di connessione al database e faccio partire la sessione
+session_start();
+include 'connect.php';
+
+$errore = "false";
+
+// Se i campi email e password sono inviati tramite POST
+if (isset($_POST['email']) && isset($_POST['password'])) {
+    // Pulisco e preparo le variabili email e password per la query
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
+
+    // Utilizzo prepared statement per prevenire SQL injection
+    $query = "SELECT * FROM amministratore WHERE Email = ? AND Password = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "ss", $email, $password);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    // Controllo il numero di righe restituite dalla query
+    if (mysqli_num_rows($result) == 1) {
+        $row = mysqli_fetch_assoc($result);
+
+        // Imposto le variabili di sessione in modo sicuro
+        $_SESSION['nome'] = $row['Nome']; // Cambio l'indice numerico con l'indice nominativo
+        $_SESSION['loginAmministratore'] = true; // Utilizzo true invece di "true"
+
+        echo $errore;
+    } else {
+        $errore = "Email o password errati"; // Miglioro il messaggio di errore
+        echo $errore;
+    }
+    
+    // Chiudo il prepared statement
+    mysqli_stmt_close($stmt);
+}
+
+// Chiudo la connession
