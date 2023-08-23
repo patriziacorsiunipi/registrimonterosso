@@ -1,8 +1,8 @@
 <?php
-// Apri la sessione e includi il file di connessione al database
 session_start();
 include 'connect.php';
 ?>
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -28,6 +28,8 @@ include 'connect.php';
         if(isset($_GET["tipoRegistro"], $_GET["numeroRegistro"])){
           $tipoRegistro = $_GET["tipoRegistro"];
           $numeroRegistro = $_GET["numeroRegistro"];
+          $tipoRegistro = mysqli_real_escape_string($conn, $tipoRegistro); // Sanitize input
+          $numeroRegistro = mysqli_real_escape_string($conn, $numeroRegistro); // Sanitize input
       ?>
       <h1 class="font-weight-bold blue-grey-text">Registro n.<?php echo htmlspecialchars($numeroRegistro); ?></h1>
       <p class="mb-5 font-weight-bold">Anno (numero di atti)</p>
@@ -45,7 +47,9 @@ include 'connect.php';
             if ($contaAttiPerAnno > 0) {
               echo "<ul class='list-unstyled card-columns'>";
               while ($AttiPerAnno = mysqli_fetch_array($result)) {
-                echo "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=" . urlencode($tipoRegistro) . "&numeroRegistro=$numeroRegistro&annoRegistro=" . urlencode($AttiPerAnno[0]) . "'>Atti del " . htmlspecialchars($AttiPerAnno[0]) . " (" . htmlspecialchars($AttiPerAnno[1]) . ")</a></li>";
+                $annoRegistro = htmlspecialchars($AttiPerAnno[0]);
+                $attiCount = htmlspecialchars($AttiPerAnno[1]);
+                echo "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=" . urlencode($tipoRegistro) . "&numeroRegistro=$numeroRegistro&annoRegistro=" . urlencode($annoRegistro) . "'>Atti del $annoRegistro ($attiCount)</a></li>";
               }
               echo "</ul>";
             }
@@ -69,6 +73,7 @@ include 'connect.php';
 <script src="js/sign.js"></script>
 </body>
 </html>
+
 <?php
 // Chiudi la connessione
 mysqli_close($conn);
