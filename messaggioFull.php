@@ -1,9 +1,11 @@
 <?php
-  //includo il file di connessione al database e faccio partire la sessione
-  session_start();
-  include 'connect.php';
+// Includo il file di connessione al database e faccio partire la sessione
+session_start();
+include 'connect.php';
 ?>
-<html>
+
+<!DOCTYPE html>
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,68 +20,49 @@
 <body>
   <main class="contenitore">
     <!-- MENU DI NAVIGAZIONE -->
-    <?php include 'menuNavigazione.php' ?>
-    <?php include 'menuRicerca.php' ?>
-    <!-- menu di navigazione -->
+    <?php include 'menuNavigazione.php'; ?>
+    <?php include 'menuRicerca.php'; ?>
     <!-- REGISTRAZIONE E ACCESSO -->
-    <?php include 'sign.php' ?>
-    <!-- registrazione e accesso -->
+    <?php include 'sign.php'; ?>
     <!-- TITOLO E DESCRIZIONE -->
     <div class="container mt-5 mb-5">
       <h1 class="font-weight-bold blue-grey-text mb-5">Messaggio</h1>
       <?php
-        if (isset($_GET["dataora"]) && isset($_GET["messaggio"]) && isset($_GET["utente"]) && isset($_GET["IDpersona"])){
-          $messaggio=$_GET['messaggio'];
-          $dataora=$_GET["dataora"];
-          $utente=$_GET["utente"];
-          $IDPersona=$_GET["IDpersona"];
-          $qIDPersona1 = "SELECT Cognome,Nome FROM battesimo WHERE IDBattesimo='$IDPersona'";
-          $qIDPersona1E = mysqli_query($conn,$qIDPersona1);
-          $contaIDPersona1 = mysqli_num_rows($qIDPersona1E);
-          $qIDPersona2 = "SELECT Cognome,Nome FROM morte WHERE IDMorte='$IDPersona'";
-          $qIDPersona2E = mysqli_query($conn,$qIDPersona2);
-          $contaIDPersona2 = mysqli_num_rows($qIDPersona2E);
-          $qIDPersona3 = "SELECT CognomeSposo,NomeSposo FROM matrimonio WHERE IDMatrimonio='$IDPersona'";
-          $qIDPersona3E = mysqli_query($conn,$qIDPersona3);
-          $contaIDPersona3 = mysqli_num_rows($qIDPersona3E);
-          $qIDPersona4 = "SELECT CognomeSposa,NomeSposa FROM matrimonio WHERE IDMatrimonio='$IDPersona'";
-          $qIDPersona4E = mysqli_query($conn,$qIDPersona4);
-          $contaIDPersona4 = mysqli_num_rows($qIDPersona4E);
+        if (isset($_GET["dataora"], $_GET["messaggio"], $_GET["utente"], $_GET["IDpersona"])) {
+          $messaggio = $_GET['messaggio'];
+          $dataora = $_GET["dataora"];
+          $utente = $_GET["utente"];
+          $IDPersona = $_GET["IDpersona"];
+          
+          // Utilizza query preparate per evitare SQL injection
+          $qIDPersona = "SELECT Cognome, Nome FROM battesimo WHERE IDBattesimo = ?";
+          $stmt = mysqli_prepare($conn, $qIDPersona);
+          mysqli_stmt_bind_param($stmt, "s", $IDPersona);
+          mysqli_stmt_execute($stmt);
+          $qIDPersonaResult = mysqli_stmt_get_result($stmt);
+          
+          // Verifica il risultato dell'interrogazione
+          if ($qIDPersonaResult && mysqli_num_rows($qIDPersonaResult) > 0) {
+              $persona = mysqli_fetch_array($qIDPersonaResult);
+              $cognome = $persona[0];
+              $nome = $persona[1];
+              echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>$IDPersona ($cognome $nome)</p>");
+          } else {
+              echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>ID non valido</p>");
+          }
+
+          mysqli_stmt_close($stmt);
         }
        ?>
-       <p class=""><span class="font-weight-bold">Mittente: </span><?php echo $utente; ?></p>
-       <p class=""><span class="font-weight-bold">Data e ora: </span><?php echo $dataora; ?></p>
-       <?php
-        if ($contaIDPersona1>0){
-          $Persona=mysqli_fetch_array($qIDPersona1E);
-          $Cognome=$Persona[0];
-          $Nome=$Persona[1];
-          echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>$IDPersona ($Cognome $Nome)</p>");
-        }elseif($contaIDPersona2>0){
-          $Persona=mysqli_fetch_array($qIDPersona2E);
-          $Cognome=$Persona[0];
-          $Nome=$Persona[1];
-          echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>$IDPersona ($Cognome $Nome)</p>");
-        }elseif($contaIDPersona3>0){
-          $Persona=mysqli_fetch_array($qIDPersona3E);
-          $Cognome=$Persona[0];
-          $Nome=$Persona[1];
-          echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>$IDPersona ($Cognome $Nome)</p>");
-        }elseif($contaIDPersona4>0){
-          $Persona=mysqli_fetch_array($qIDPersona4E);
-          $Cognome=$Persona[0];
-          $Nome=$Persona[1];
-          echo ("<p class=''><span class='font-weight-bold'>Riferimento: </span>$IDPersona ($Cognome $Nome)</p>");
-        }
-       ?>
+       <p class=""><span class="font-weight-bold">Mittente: </span><?php echo htmlspecialchars($utente); ?></p>
+       <p class=""><span class="font-weight-bold">Data e ora: </span><?php echo htmlspecialchars($dataora); ?></p>
        <br>
-       <p><?php echo $messaggio; ?></p>
+       <p><?php echo htmlspecialchars($messaggio); ?></p>
     </div>
-    <!-- titolo e desccrizione -->
+    <!-- titolo e descrizione -->
   </main>
   <!-- FOOTER -->
-  <?php include 'footer.php' ?>
-  <!-- footer -->
+  <?php include 'footer.php'; ?>
 <script src="js/jquery.min.js"></script>
 <script src="js/popper.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
@@ -89,7 +72,8 @@
 </script>
 </body>
 </html>
+
 <?php
-  //chiudo la connessione
+  // Chiudi la connessione
   mysqli_close($conn);
 ?>
