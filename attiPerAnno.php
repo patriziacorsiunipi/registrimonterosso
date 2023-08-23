@@ -1,9 +1,10 @@
 <?php
-  //includo il file di connessione al database e faccio partire la sessione
-  session_start();
-  include 'connect.php';
+// Apri la sessione e includi il file di connessione al database
+session_start();
+include 'connect.php';
 ?>
-<html>
+<!DOCTYPE html>
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,72 +18,50 @@
 <body>
   <main>
     <!-- MENU DI NAVIGAZIONE -->
-    <?php include 'menuNavigazione.php' ?>
-    <?php include 'menuRicerca.php' ?>
-    <!-- menu di navigazione -->
+    <?php include 'menuNavigazione.php'; ?>
+    <?php include 'menuRicerca.php'; ?>
     <!-- REGISTRAZIONE E ACCESSO -->
-    <?php include 'sign.php' ?>
-    <!-- registrazione e accesso -->
+    <?php include 'sign.php'; ?>
     <!-- CONTENUTO -->
     <div class="container mt-5">
       <?php
-        $tipoRegistro=$_GET["tipoRegistro"];
-        $numeroRegistro=$_GET["numeroRegistro"];
+        if(isset($_GET["tipoRegistro"], $_GET["numeroRegistro"])){
+          $tipoRegistro = $_GET["tipoRegistro"];
+          $numeroRegistro = $_GET["numeroRegistro"];
       ?>
-      <h1 class="font-weight-bold blue-grey-text">Registro n.<?php echo $numeroRegistro; ?></h1>
+      <h1 class="font-weight-bold blue-grey-text">Registro n.<?php echo htmlspecialchars($numeroRegistro); ?></h1>
       <p class="mb-5 font-weight-bold">Anno (numero di atti)</p>
       <div class="row">
         <div class="col-sm-10">
           <?php
-          if($tipoRegistro=="battesimo"){
-            $qAttiPerAnnoBT = "SELECT Anno,COUNT(*) AS AttiPerAnno FROM battesimo WHERE Anno<1900 AND NumRegistro='$numeroRegistro' GROUP BY Anno";
-            $qAttiPerAnnoBTE = mysqli_query($conn,$qAttiPerAnnoBT);
-            $contaAttiPerAnnoBT = mysqli_num_rows($qAttiPerAnnoBTE);
-            if ($contaAttiPerAnnoBT>0){
-              echo ("<ul class='list-unstyled card-columns'>");
-              while($AttiPerAnnoBT = mysqli_fetch_array($qAttiPerAnnoBTE)){
-                echo (
-                  "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=$tipoRegistro&&numeroRegistro=$numeroRegistro&&annoRegistro=$AttiPerAnnoBT[0]'>Atti del $AttiPerAnnoBT[0] ($AttiPerAnnoBT[1])</a></li>"
-                );
+          if ($tipoRegistro == "battesimo" || $tipoRegistro == "matrimonio" || $tipoRegistro == "morte") {
+            $qAttiPerAnno = "SELECT Anno, COUNT(*) AS AttiPerAnno FROM $tipoRegistro WHERE Anno < 1900 AND NumRegistro = ? GROUP BY Anno";
+            $stmt = mysqli_prepare($conn, $qAttiPerAnno);
+            mysqli_stmt_bind_param($stmt, "i", $numeroRegistro);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $contaAttiPerAnno = mysqli_num_rows($result);
+            
+            if ($contaAttiPerAnno > 0) {
+              echo "<ul class='list-unstyled card-columns'>";
+              while ($AttiPerAnno = mysqli_fetch_array($result)) {
+                echo "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=" . urlencode($tipoRegistro) . "&numeroRegistro=$numeroRegistro&annoRegistro=" . urlencode($AttiPerAnno[0]) . "'>Atti del " . htmlspecialchars($AttiPerAnno[0]) . " (" . htmlspecialchars($AttiPerAnno[1]) . ")</a></li>";
               }
-              echo ("</ul>");
+              echo "</ul>";
             }
-          }elseif($tipoRegistro=="matrimonio"){
-            $qAttiPerAnnoMT = "SELECT Anno,COUNT(*) AS AttiPerAnno FROM matrimonio WHERE Anno<1900 AND NumRegistro='$numeroRegistro' GROUP BY Anno";
-            $qAttiPerAnnoMTE = mysqli_query($conn,$qAttiPerAnnoMT);
-            $contaAttiPerAnnoMT = mysqli_num_rows($qAttiPerAnnoMTE);
-            if ($contaAttiPerAnnoMT>0){
-              echo ("<ul class='list-unstyled card-columns'>");
-              while($AttiPerAnnoMT = mysqli_fetch_array($qAttiPerAnnoMTE)){
-                echo (
-                  "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=$tipoRegistro&&numeroRegistro=$numeroRegistro&&annoRegistro=$AttiPerAnnoMT[0]'>Atti del $AttiPerAnnoMT[0] ($AttiPerAnnoMT[1])</a></li>"
-                );
-              }
-              echo ("</ul>");
-            }
-          }else{
-            $qAttiPerAnnoMR = "SELECT Anno,COUNT(*) AS AttiPerAnno FROM morte WHERE Anno<1900 AND NumRegistro='$numeroRegistro' GROUP BY Anno";
-            $qAttiPerAnnoMRE = mysqli_query($conn,$qAttiPerAnnoMR);
-            $contaAttiPerAnnoMR = mysqli_num_rows($qAttiPerAnnoMRE);
-            if ($contaAttiPerAnnoMR>0){
-              echo ("<ul class='list-unstyled card-columns'>");
-              while($AttiPerAnnoMR = mysqli_fetch_array($qAttiPerAnnoMRE)){
-                echo (
-                  "<li class='attiPerAnno'><a class='text-dark' href='registro.php?tipoRegistro=$tipoRegistro&&numeroRegistro=$numeroRegistro&&annoRegistro=$AttiPerAnnoMR[0]'>Atti del $AttiPerAnnoMR[0] ($AttiPerAnnoMR[1])</a></li>"
-                );
-              }
-              echo ("</ul>");
-            }
+            mysqli_stmt_close($stmt);
           }
           ?>
         </div>
       </div>
+      <?php
+        }
+      ?>
     </div>
-    <!-- contenuto -->
+    <!-- CONTENUTO -->
   </main>
   <!-- FOOTER -->
-  <?php include 'footer.php' ?>
-  <!-- footer -->
+  <?php include 'footer.php'; ?>
 <script src="js/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
@@ -91,6 +70,6 @@
 </body>
 </html>
 <?php
-  //chiudo la connessione
-  mysqli_close($conn);
+// Chiudi la connessione
+mysqli_close($conn);
 ?>
