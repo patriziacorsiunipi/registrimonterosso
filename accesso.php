@@ -4,7 +4,11 @@
 	include'connect.php';
   $errore="false";
   //se i campi nickname e password sono inseriti
-	if(isset($_POST['email'])&&isset($_POST['password'])){
+  $emailpost = $_POST['email'];
+  $passwordpost = $_POST['password'];
+
+
+	if(isset($emailpost)&&isset($passwordpost)){
     //registro le variabili nickname e password
 		$email = $_POST['email'];
 		$password = $_POST['password'];
